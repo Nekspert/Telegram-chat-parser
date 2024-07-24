@@ -36,17 +36,16 @@ class DataBase:
         try:
             # print(self.cursor.execute(f'PRAGMA table_info("{name_table}")').fetchall())
             # PRAGMA table_info - return columns
-            if (values[0],) not in self.select_values(name_table=name_table, columns=
-            self.cursor.execute(f'PRAGMA table_info("{name_table}")').fetchone()[1]):
+            data = await self.select_values(name_table=name_table, columns=
+            self.cursor.execute(f'PRAGMA table_info("{name_table}")').fetchone()[1])
+            if (values[0],) not in data:
                 amount: str = '?, ' * len(values)
                 self.cursor.executemany(f'INSERT INTO {name_table} VALUES ({amount[:-2]})', (values,))
                 self.connect.commit()
-                res: list = [str(i)[:100] for i in values]
+                res: list[str] = [str(i)[:100] for i in values]
                 print(f'[*] Added value to the "{name_table}": {res}')
             else:
                 pass
-            # else:
-            #     pass
         except sql.Error as ex:
             print('[!] Ошибка базы данных:', ex)
         except Exception as ex:
@@ -57,7 +56,7 @@ class DataBase:
             amount: str = '?, ' * len(values)
             self.cursor.executemany(f'INSERT INTO {name_table} VALUES ({amount[:-2]})', (values,))
             self.connect.commit()
-            res: list = [i[:100] for i in values]
+            res: list[str] = [str(i)[:50] for i in values]
             print(f'[*] Added value to the "{name_table}": {res}')
         except sql.Error as ex:
             print('[!] Ошибка базы данных:', ex)

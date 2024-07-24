@@ -14,14 +14,19 @@ router = Router()
 
 @router.message(Command(commands=['start']), IsAdmin(), StateFilter(default_state))
 async def process_start_command(message: Message) -> None:
-    await db.create_table(name_table='users', columns=(('user_id', 'INTEGER'), ('user_name', 'TEXT'),
-                                                       ('target_chats', 'TEXT'), ('target_words', 'TEXT')))
+    await db.create_table(name_table='users', columns=(('user_id', 'INTEGER'), ('user_name', 'TEXT')))
+    await db.create_table(name_table='chats',
+                          columns=(('user_id', 'INTEGER'), ('chat_title', 'TEXT'), ('chat_id', 'INTEGER')))
+    await db.create_table(name_table='words', columns=(('user_id', 'INTEGER'), ('target_word', 'TEXT')))
+
+    await db.add_values_unique(name_table='users', values=(message.from_user.id, f'@{message.from_user.username}'))
+
     await message.answer(text='''Привет! Я бот для парсинга сообщений. Вот что я могу:
 Выбирать чаты для парсинга;
 Выбирать ключевые слова для парсинга;
 Парсить сообщения из всех ваших чатов. 
 Используйте команды и настройки, чтобы управлять мной и настроить рассылку сообщений по вашему усмотрению!''',
-                         reply_markup=create_inline_keyboard('start_parsing', 'choose_chats', 'choose_words', 'back',
+                         reply_markup=create_inline_keyboard('start_parsing', 'choose_chats', 'choose_words',
                                                              marking=(1, 2)))
 
 
@@ -38,14 +43,16 @@ async def process_cancel_command(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(F.data == 'choose_chats')
 async def process_choose_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
-    chats = await db.select_values(name_table='users', columns='target_chats',
+    chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
                                    condition=f'user_id == {callback.from_user.id}')
     await state.set_state(BotStates.chats)
+    await state.set_data({'chats_in_lists_del': chats})
+    # print(chats)
     if len(chats) == 0:
         await callback.message.edit_text(text='Чаты для парсинга не выбраны',
                                          reply_markup=create_inline_keyboard('delete', 'add', 'back', marking=2))
     else:
-        target_chats = '\n'.join(f'{i}) {chat[:30]}' for chat, i in enumerate(chats, 1))
+        target_chats = '\n'.join(f'{i}) {chat[0][:50]}' for i, chat in enumerate(chats, 1))
         await callback.message.edit_text(text='Чаты для парсинга:\n' + target_chats,
                                          reply_markup=create_inline_keyboard(
                                              'delete', 'add', 'back', marking=2
@@ -54,7 +61,7 @@ async def process_choose_chat_command(callback: CallbackQuery, state: FSMContext
 
 @router.callback_query(F.data == 'target_words')
 async def process_target_word_command(callback: CallbackQuery, state: FSMContext) -> None:
-    words = await db.select_values(name_table='users', columns='target_words',
+    words = await db.select_values(name_table='words', columns='target_words',
                                    condition=f'user_id == {callback.from_user.id}')
     await state.set_state(BotStates.words)
     if len(words) == 0:
@@ -74,8 +81,13 @@ async def process_start_parsing_command(callback: CallbackQuery, state: FSMConte
     await callback.message.edit_text(text='Парсинг запущен')
 
 
+@router.message(IsAdmin(), ~StateFilter(default_state))
+async def process_echo_admin1_command(message: Message) -> None:
+    await message.answer(text='Я вас не понимаю! Действуйте по инструкциям бота.')
+
+
 @router.message(IsAdmin(), StateFilter(default_state))
-async def process_echo_admin_command(message: Message) -> None:
+async def process_echo_admin2_command(message: Message) -> None:
     await message.answer(text='Я вас не понимаю! Действуйте по инструкциям бота.')
 
 
