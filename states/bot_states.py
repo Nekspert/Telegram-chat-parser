@@ -1,7 +1,7 @@
 from aiogram.fsm.state import (StatesGroup, State)
 
 
-class BotStates(StatesGroup):
+class FSMBotStates(StatesGroup):
     chats = State()
     words = State()
     del_chat = State()

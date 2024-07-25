@@ -1,19 +1,18 @@
 from aiogram import (Router, F)
-from aiogram.types import (CallbackQuery)
+from aiogram.types import CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
 from models.models import db
 from keyboards.keyboard_utils import (create_chats_keyboard, create_inline_keyboard)
-from states.bot_states import BotStates
+from states.bot_states import FSMBotStates
 
 router = Router()
 
 
-@router.callback_query(F.data.startswith('forward'), StateFilter(BotStates.del_chat))
+@router.callback_query(F.data.startswith('forward'), StateFilter(FSMBotStates.del_chat))
 async def process_forward_del_command(callback: CallbackQuery, state: FSMContext) -> None:
     chatics = (await state.get_data())['chats_in_lists_del']
-    print(chatics)
     index = int(callback.data.split('_')[1])
     if 0 < len(chatics[index * 8: (index + 1) * 8]) <= 8:
         await callback.message.edit_reply_markup(
@@ -21,7 +20,7 @@ async def process_forward_del_command(callback: CallbackQuery, state: FSMContext
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith('backward'), StateFilter(BotStates.del_chat))
+@router.callback_query(F.data.startswith('backward'), StateFilter(FSMBotStates.del_chat))
 async def process_backward_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     if int(callback.data.split('_')[1]) > 1:
         # print(callback.data)
@@ -32,9 +31,9 @@ async def process_backward_chat_command(callback: CallbackQuery, state: FSMConte
     await callback.answer()
 
 
-@router.callback_query(F.data == 'back', StateFilter(BotStates.del_chat))
+@router.callback_query(F.data == 'back', StateFilter(FSMBotStates.del_chat))
 async def process_back_add_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.set_state(BotStates.chats)
+    await state.set_state(FSMBotStates.chats)
     chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
                                    condition=f'user_id == {callback.from_user.id}')
     await state.set_data({'chats_in_lists_del': chats})
@@ -49,7 +48,7 @@ async def process_back_add_chat_command(callback: CallbackQuery, state: FSMConte
                                          ))
 
 
-@router.callback_query(StateFilter(BotStates.del_chat))
+@router.callback_query(StateFilter(FSMBotStates.del_chat))
 async def process_delete_command(callback: CallbackQuery, state: FSMContext) -> None:
     title = [name for name in (await state.get_data())['chats_in_lists_del'] if name['id'] == int(callback.data)]
     await db.delete_row(name_table='chats',

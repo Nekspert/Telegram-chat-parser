@@ -4,3 +4,4 @@ __pycache__/
 *.db
 *.session
 *.session-journal
+test.py

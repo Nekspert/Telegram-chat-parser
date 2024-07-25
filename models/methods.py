@@ -131,14 +131,15 @@ class DataBase:
             print('[!] Общая ошибка:', ex)
 
     async def delete_row(self, name_table: str, condition: str):
-        try:
-            self.cursor.execute(f'DELETE FROM {name_table} WHERE {condition}')
-            self.connect.commit()
-            print(f'[*] DELETE FROM {name_table} WHERE {condition}')
-        except sql.Error as ex:
-            print('[!] Ошибка базы данных:', ex)
-        except Exception as ex:
-            print('[!] Общая ошибка:', ex)
+        # try:
+        self.cursor.execute(f'DELETE FROM {name_table} WHERE {condition}')
+        self.connect.commit()
+        print(f'[*] DELETE FROM {name_table} WHERE {condition}')
+
+    # except sql.Error as ex:
+    #     print('[!] Ошибка базы данных:', ex)
+    # except Exception as ex:
+    #     print('[!] Общая ошибка:', ex)
 
     async def drop_table(self, name_table: str) -> None:
         try:

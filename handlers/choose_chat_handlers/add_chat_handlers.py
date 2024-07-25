@@ -1,16 +1,16 @@
 from aiogram import (Router, F)
-from aiogram.types import (CallbackQuery)
+from aiogram.types import CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
 from models.models import db
 from keyboards.keyboard_utils import (create_chats_keyboard, create_inline_keyboard)
-from states.bot_states import BotStates
+from states.bot_states import FSMBotStates
 
 router = Router()
 
 
-@router.callback_query(F.data.startswith('forward'), StateFilter(BotStates.add_chat))
+@router.callback_query(F.data.startswith('forward'), StateFilter(FSMBotStates.add_chat))
 async def process_forward_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     # print(callback.data)
     chatics = (await state.get_data())['chats_in_list']
@@ -21,7 +21,7 @@ async def process_forward_chat_command(callback: CallbackQuery, state: FSMContex
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith('backward'), StateFilter(BotStates.add_chat))
+@router.callback_query(F.data.startswith('backward'), StateFilter(FSMBotStates.add_chat))
 async def process_backward_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     if int(callback.data.split('_')[1]) > 1:
         # print(callback.data)
@@ -32,12 +32,12 @@ async def process_backward_chat_command(callback: CallbackQuery, state: FSMConte
     await callback.answer()
 
 
-@router.callback_query(F.data == 'back', StateFilter(BotStates.add_chat))
+@router.callback_query(F.data == 'back', StateFilter(FSMBotStates.add_chat))
 async def process_back_add_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.set_state(BotStates.chats)
+    await state.set_state(FSMBotStates.chats)
     chats = await db.select_values(name_table='chats', columns='chat_title',
                                    condition=f'user_id == {callback.from_user.id}')
-    # print(chats)
+
     await state.set_data({'chats_in_lists_del': chats})
     if len(chats) == 0:
         await callback.message.edit_text(text='Чаты для парсинга не выбраны',
@@ -50,7 +50,7 @@ async def process_back_add_chat_command(callback: CallbackQuery, state: FSMConte
                                          ))
 
 
-@router.callback_query(StateFilter(BotStates.add_chat))
+@router.callback_query(StateFilter(FSMBotStates.add_chat))
 async def process_add_command(callback: CallbackQuery, state: FSMContext) -> None:
     chatics = await state.get_data()
     title = [dict_chat['title'] for dict_chat in chatics['chats_in_list'] if str(dict_chat['id']) == callback.data][0]
@@ -60,11 +60,3 @@ async def process_add_command(callback: CallbackQuery, state: FSMContext) -> Non
         await db.add_values_repetitive(name_table='chats',
                                        values=(callback.from_user.id, title, int(callback.data)))
     await callback.answer(text=f'{title} - добавлен(а)')
-    # titles: list[list[str | int]] = await db.select_values(name_table='chats', columns='chat_title',
-    #                                                        condition=f'user_id == {callback.from_user.id}')
-    # all_titles: list = [title for title in titles]
-    # target_chats = '\n'.join(f'{i}) {chat[0][:50]}' for i, chat in enumerate(all_titles, 1))
-    # await callback.message.edit_text(text='Чаты для парсинга:\n' + target_chats,
-    #                                  reply_markup=create_inline_keyboard(
-    #                                      'delete', 'add', 'back', marking=2
-    #                                  ))

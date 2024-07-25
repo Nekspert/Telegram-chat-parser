@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from filters.admin_filter import IsAdmin
 from models.models import db
 from keyboards.keyboard_utils import create_inline_keyboard
-from states.bot_states import BotStates
+from states.bot_states import FSMBotStates
 
 router = Router()
 
@@ -45,7 +45,7 @@ async def process_cancel_command(message: Message, state: FSMContext) -> None:
 async def process_choose_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
                                    condition=f'user_id == {callback.from_user.id}')
-    await state.set_state(BotStates.chats)
+    await state.set_state(FSMBotStates.chats)
     await state.set_data({'chats_in_lists_del': chats})
     # print(chats)
     if len(chats) == 0:
@@ -59,16 +59,16 @@ async def process_choose_chat_command(callback: CallbackQuery, state: FSMContext
                                          ))
 
 
-@router.callback_query(F.data == 'target_words')
+@router.callback_query(F.data == 'choose_words')
 async def process_target_word_command(callback: CallbackQuery, state: FSMContext) -> None:
-    words = await db.select_values(name_table='words', columns='target_words',
+    words = await db.select_values(name_table='words', columns='target_word',
                                    condition=f'user_id == {callback.from_user.id}')
-    await state.set_state(BotStates.words)
+    await state.set_state(FSMBotStates.words)
     if len(words) == 0:
         await callback.message.edit_text(text='Слова для парсинга не выбраны',
                                          reply_markup=create_inline_keyboard('delete', 'add', 'back', marking=2))
     else:
-        target_words = '\n'.join(f'{i}) {word[:30]}' for word, i in enumerate(words, 1))
+        target_words = '\n'.join(f'{i}) {word[0][:30]}' for i, word in enumerate(words, 1))
         await callback.message.edit_text(text='Ключевые слова для парсинга:\n' + target_words,
                                          reply_markup=create_inline_keyboard(
                                              'delete', 'add', 'back', marking=2
@@ -79,11 +79,6 @@ async def process_target_word_command(callback: CallbackQuery, state: FSMContext
 @router.callback_query(F.data == 'start_parsing')
 async def process_start_parsing_command(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.message.edit_text(text='Парсинг запущен')
-
-
-@router.message(IsAdmin(), ~StateFilter(default_state))
-async def process_echo_admin1_command(message: Message) -> None:
-    await message.answer(text='Я вас не понимаю! Действуйте по инструкциям бота.')
 
 
 @router.message(IsAdmin(), StateFilter(default_state))

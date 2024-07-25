@@ -64,3 +64,20 @@ def create_chats_keyboard(*args, flag: int = 0):
     kb.adjust(*result)
     return kb.as_markup(one_time_keyboard=True, resize_keyboard=True)
 
+
+def create_words_keyboard(*args, flag: int = 0):
+    kb = InlineKeyboardBuilder()
+    buttons: list[InlineKeyboardButton] = []
+    count = 0
+    for button in args:
+        count += 1
+        buttons.append(InlineKeyboardButton(text=button[0], callback_data=button[0]))
+    buttons.append(InlineKeyboardButton(text='<<', callback_data=f'backward_{flag}'))
+    buttons.append(InlineKeyboardButton(text='>>', callback_data=f'forward_{flag}'))
+    buttons.append(InlineKeyboardButton(text='back', callback_data='back'))
+    kb.add(*buttons)
+    result: list[int] = [1 for _ in range(count)]
+    result.append(2)
+    result.append(1)
+    kb.adjust(*result)
+    return kb.as_markup(one_time_keyboard=True, resize_keyboard=True)
