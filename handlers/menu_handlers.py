@@ -47,7 +47,6 @@ async def process_choose_chat_command(callback: CallbackQuery, state: FSMContext
                                    condition=f'user_id == {callback.from_user.id}')
     await state.set_state(FSMBotStates.chats)
     await state.set_data({'chats_in_lists_del': chats})
-    # print(chats)
     if len(chats) == 0:
         await callback.message.edit_text(text='Чаты для парсинга не выбраны',
                                          reply_markup=create_inline_keyboard('delete', 'add', 'back', marking=2))

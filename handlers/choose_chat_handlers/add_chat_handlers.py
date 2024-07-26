@@ -35,7 +35,7 @@ async def process_backward_chat_command(callback: CallbackQuery, state: FSMConte
 @router.callback_query(F.data == 'back', StateFilter(FSMBotStates.add_chat))
 async def process_back_add_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FSMBotStates.chats)
-    chats = await db.select_values(name_table='chats', columns='chat_title',
+    chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
                                    condition=f'user_id == {callback.from_user.id}')
 
     await state.set_data({'chats_in_lists_del': chats})
