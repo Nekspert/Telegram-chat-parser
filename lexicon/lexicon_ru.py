@@ -1,1 +1,0 @@
-LEXICON: dict = {}

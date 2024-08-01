@@ -4,7 +4,7 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
 from models.models import db
-from keyboards.keyboard_utils import (create_chats_keyboard, create_inline_keyboard)
+from keyboards.keyboard_utils import (create_chats_keyboard, create_commands_keyboard)
 from states.bot_states import FSMBotStates
 
 router = Router()
@@ -38,14 +38,14 @@ async def process_back_add_chat_command(callback: CallbackQuery, state: FSMConte
     chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
                                    condition=f'user_id == {callback.from_user.id}')
 
-    await state.set_data({'chats_in_lists_del': chats})
+    await state.update_data(chats_in_lists_del=chats)
     if len(chats) == 0:
         await callback.message.edit_text(text='Чаты для парсинга не выбраны',
-                                         reply_markup=create_inline_keyboard('delete', 'add', 'back', marking=2))
+                                         reply_markup=create_commands_keyboard('delete', 'add', 'back', marking=2))
     else:
         target_chats = '\n'.join(f'{i}) {chat[0][:50]}' for i, chat in enumerate(chats, 1))
         await callback.message.edit_text(text='Чаты для парсинга:\n' + target_chats,
-                                         reply_markup=create_inline_keyboard(
+                                         reply_markup=create_commands_keyboard(
                                              'delete', 'add', 'back', marking=2
                                          ))
 

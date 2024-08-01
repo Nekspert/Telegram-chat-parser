@@ -8,3 +8,7 @@ class FSMBotStates(StatesGroup):
     add_chat = State()
     del_word = State()
     add_word = State()
+    menu = State()
+    admin = State()
+    add_admin = State()
+    del_admin = State()
