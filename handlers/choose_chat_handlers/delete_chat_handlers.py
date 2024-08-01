@@ -33,8 +33,7 @@ async def process_backward_chat_command(callback: CallbackQuery, state: FSMConte
 @router.callback_query(F.data == 'back', StateFilter(FSMBotStates.del_chat))
 async def process_back_add_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FSMBotStates.chats)
-    chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
-                                   condition=f'user_id == {callback.from_user.id}')
+    chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'))
     await state.update_data(chats_in_lists_del=chats)
     if len(chats) == 0:
         await callback.message.edit_text(text='Чаты для парсинга не выбраны',
@@ -50,6 +49,5 @@ async def process_back_add_chat_command(callback: CallbackQuery, state: FSMConte
 @router.callback_query(StateFilter(FSMBotStates.del_chat))
 async def process_delete_command(callback: CallbackQuery, state: FSMContext) -> None:
     title = [name for name in (await state.get_data())['chats_in_lists_del'] if name['id'] == int(callback.data)]
-    await db.delete_row(name_table='chats',
-                        condition=f'user_id == {callback.from_user.id} AND chat_id == {callback.data}')
+    await db.delete_row(name_table='chats', condition=f'chat_id == {callback.data}')
     await callback.answer(text=f'{title} - удален(а)')

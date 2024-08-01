@@ -49,8 +49,7 @@ async def process_delete_chat_command(callback: CallbackQuery, state: FSMContext
 @router.callback_query(F.data == 'back', StateFilter(FSMBotStates.chats))
 async def process_back_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FSMBotStates.menu)
-    flag, count = (await db.select_values(name_table='users', columns=('flag', 'count'),
-                                          condition=f'user_id == {callback.from_user.id}'))[0]
+    flag, count = (await db.select_values(name_table='users', columns=('flag', 'count')))[0]
     choice = (await state.get_data())['choice']
     if choice == 'menu':
         if flag:

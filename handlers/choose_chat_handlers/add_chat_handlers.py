@@ -35,8 +35,7 @@ async def process_backward_chat_command(callback: CallbackQuery, state: FSMConte
 @router.callback_query(F.data == 'back', StateFilter(FSMBotStates.add_chat))
 async def process_back_add_chat_command(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FSMBotStates.chats)
-    chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'),
-                                   condition=f'user_id == {callback.from_user.id}')
+    chats = await db.select_values(name_table='chats', columns=('chat_title', 'chat_id'))
 
     await state.update_data(chats_in_lists_del=chats)
     if len(chats) == 0:
@@ -54,8 +53,7 @@ async def process_back_add_chat_command(callback: CallbackQuery, state: FSMConte
 async def process_add_command(callback: CallbackQuery, state: FSMContext) -> None:
     chatics = await state.get_data()
     title = [dict_chat['title'] for dict_chat in chatics['chats_in_list'] if str(dict_chat['id']) == callback.data][0]
-    titles = await db.select_values(name_table='chats', columns='chat_title',
-                                    condition=f'user_id == {callback.from_user.id}')
+    titles = await db.select_values(name_table='chats', columns='chat_title')
     if (title,) not in titles:
         await db.add_values_repetitive(name_table='chats',
                                        values=(callback.from_user.id, title, int(callback.data)))

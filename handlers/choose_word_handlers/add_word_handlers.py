@@ -14,8 +14,7 @@ router = Router()
 async def process_back_word_command(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FSMBotStates.words)
 
-    words = await db.select_values(name_table='words', columns='target_word',
-                                   condition=f'user_id == {callback.from_user.id}')
+    words = await db.select_values(name_table='words', columns='target_word')
     if len(words) == 0:
         await callback.message.edit_text(text='Слова для парсинга не выбраны',
                                          reply_markup=create_commands_keyboard('delete', 'add', 'back', marking=2))
@@ -31,12 +30,10 @@ async def process_back_word_command(callback: CallbackQuery, state: FSMContext) 
 async def process_add_yes_command(callback: CallbackQuery, state: FSMContext) -> None:
     result_words: list[str] = (await state.get_data())['words']
     for word in result_words:
-        now_words = await db.select_values(name_table='words', columns='target_word',
-                                           condition=f'user_id == {callback.from_user.id}')
+        now_words = await db.select_values(name_table='words', columns='target_word')
         if (word.lower(), ) not in now_words:
             await db.add_values_repetitive(name_table='words', values=(callback.from_user.id, word.lower()))
-    words = await db.select_values(name_table='words', columns='target_word',
-                                   condition=f'user_id == {callback.from_user.id}')
+    words = await db.select_values(name_table='words', columns='target_word')
     await state.set_state(FSMBotStates.words)
     if len(words) == 0:
         await callback.message.edit_text(text='Слова для парсинга не выбраны',

@@ -53,9 +53,8 @@ async def process_telethon_new_message_handler(event: events.NewMessage.Event):
         for word in words:
             if word[0] in message.text.lower().split():
                 triggers += '"' + word[0] + '"' + ' '
-        chati_id = (await db.select_values(name_table='users', columns='chat_id',
-                                           condition=f'user_id == {super_admin}'))[0][0]
-        if triggers and chat.id != chati_id and (chat.id,) in chats:
+        chati_id = (await db.select_values(name_table='users', columns='chat_id'))[0]
+        if triggers and (chat.id,) not in chati_id and (chat.id,) in chats:
             sender = await event.get_sender()
             if isinstance(sender, Channel):
                 user_first_name = sender.title if sender.title else ""
@@ -80,15 +79,13 @@ async def process_telethon_new_message_handler(event: events.NewMessage.Event):
             else:
                 result = (f'{message_link}\n\nТриггеры: {triggers}\n\nНайдено у(в) - {user_channel_bot_link}\n\n'
                           f'Автор: {user_first_name} {user_last_name}')
-            chatic_id = await db.select_values(name_table='users', columns='chat_id',
-                                               condition=f'user_id == {super_admin}')
-            bot_username = await db.select_values(name_table='users', columns='username',
-                                                  condition=f'user_id == {super_admin}')
-            await db.update_values(name_table='users', expression='count = count + 1',
-                                   condition=f'user_id == {super_admin}')
+            chatic_id = await db.select_values(name_table='users', columns='chat_id')
+            bot_username = await db.select_values(name_table='users', columns='username')
+            await db.update_values(name_table='users', expression='count = count + 1')
 
             if not message_link == "[НЕТ ССЫЛКИ НА СООБЩЕНИЕ]":
-                await bot.send_message(chat_id=chatic_id[0][0], text=result)
+                for chat in chatic_id:
+                    await bot.send_message(chat_id=chat[0], text=result)
             else:
                 await client.forward_messages(entity=bot_username[0][0], from_peer=event.chat_id,
                                               messages=[message])

@@ -21,8 +21,7 @@ async def process_add_word_command(callback: CallbackQuery, state: FSMContext) -
 @router.callback_query(F.data == 'back', StateFilter(FSMBotStates.words))
 async def process_back_word_command(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FSMBotStates.menu)
-    flag, count = (await db.select_values(name_table='users', columns=('flag', 'count'),
-                                          condition=f'user_id == {callback.from_user.id}'))[0]
+    flag, count = (await db.select_values(name_table='users', columns=('flag', 'count')))[0]
     choice = (await state.get_data())['choice']
     if choice == 'menu':
         if flag:
@@ -53,8 +52,7 @@ async def process_back_word_command(callback: CallbackQuery, state: FSMContext) 
 
 @router.callback_query(F.data == 'delete', StateFilter(FSMBotStates.words))
 async def process_del_word_command(callback: CallbackQuery, state: FSMContext) -> None:
-    words: list = await db.select_values(name_table='words', columns='target_word',
-                                         condition=f'user_id == {callback.from_user.id}')
+    words: list = await db.select_values(name_table='words', columns='target_word')
     await state.set_state(FSMBotStates.del_word)
     await state.update_data(words=words)
     if len(words) > 0:

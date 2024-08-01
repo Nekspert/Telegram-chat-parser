@@ -10,7 +10,7 @@ bot = Bot(token=config.tg_bot.token)
 
 dp = Dispatcher()
 dp.workflow_data.update(
-    {'instance_bot': bot, 'admin_ids': admins}
+    {'instance_bot': bot, 'admin_ids': admins, 'super_admin': admins[0]}
 )
 
 

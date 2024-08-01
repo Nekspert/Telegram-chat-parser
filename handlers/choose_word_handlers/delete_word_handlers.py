@@ -32,8 +32,7 @@ async def process_backward_chat_command(callback: CallbackQuery, state: FSMConte
 
 @router.callback_query(F.data == 'back', StateFilter(FSMBotStates.del_word))
 async def process_back_word_command(callback: CallbackQuery, state: FSMContext) -> None:
-    words: list = await db.select_values(name_table='words', columns='target_word',
-                                         condition=f'user_id == {callback.from_user.id}')
+    words: list = await db.select_values(name_table='words', columns='target_word')
     await state.set_state(FSMBotStates.words)
     if len(words) == 0:
         await callback.message.edit_text(text='Слова для парсинга не выбраны',
@@ -49,5 +48,5 @@ async def process_back_word_command(callback: CallbackQuery, state: FSMContext) 
 @router.callback_query(StateFilter(FSMBotStates.del_word))
 async def process_del_word_command(callback: CallbackQuery) -> None:
     await db.delete_row(name_table='words',
-                        condition=f'user_id == {callback.from_user.id} AND target_word == "{callback.data}"')
+                        condition=f'target_word == "{callback.data}"')
     await callback.answer(text=f'{callback.data} - удален(а)')
