@@ -10,7 +10,6 @@ from main_loader import bot
 config: Config = load_config(path='.env')
 api_id: str = config.tg_bot.api_id
 api_hash: str = config.tg_bot.api_hash
-super_admin: int = config.tg_bot.admin_ids[0]
 password: str = config.tg_bot.password
 
 client = TelegramClient(session='admin', api_id=api_id, api_hash=api_hash, system_version='4.16.30-vxCUSTOM"',
@@ -43,8 +42,8 @@ async def get_chats() -> list[dict[str, str | int]]:
 
 @client.on(events.NewMessage)
 async def process_telethon_new_message_handler(event: events.NewMessage.Event):
-    flag = (await db.select_values(name_table='users', columns='flag', condition=f'user_id == {super_admin}'))
-    if flag[0][0]:
+    flags: list[tuple[int]] = (await db.select_values(name_table='users', columns='flag'))
+    if (1,) in flags:
         message = event.message
         chat = await event.get_chat()
         chats = await db.select_values(name_table='chats', columns='chat_id')
@@ -53,7 +52,7 @@ async def process_telethon_new_message_handler(event: events.NewMessage.Event):
         for word in words:
             if word[0] in message.text.lower().split():
                 triggers += '"' + word[0] + '"' + ' '
-        chati_id = (await db.select_values(name_table='users', columns='chat_id'))[0]
+        chati_id = (await db.select_values(name_table='users', columns='chat_id'))
         if triggers and (chat.id,) not in chati_id and (chat.id,) in chats:
             sender = await event.get_sender()
             if isinstance(sender, Channel):
@@ -61,7 +60,7 @@ async def process_telethon_new_message_handler(event: events.NewMessage.Event):
                 user_username = sender.username if sender.username else ""
                 user_last_name = ''
             else:
-                user_username = sender.username if sender.username else ""
+                user_username = sender.username if sender.username is not None else ""
                 user_first_name = sender.first_name if sender.first_name else ""
                 user_last_name = sender.last_name if sender.last_name else ""
 
@@ -79,16 +78,22 @@ async def process_telethon_new_message_handler(event: events.NewMessage.Event):
             else:
                 result = (f'{message_link}\n\nТриггеры: {triggers}\n\nНайдено у(в) - {user_channel_bot_link}\n\n'
                           f'Автор: {user_first_name} {user_last_name}')
-            chatic_id = await db.select_values(name_table='users', columns='chat_id')
+            chatic_id = await db.select_values(name_table='users', columns='chat_id', condition='flag == 1')
             bot_username = await db.select_values(name_table='users', columns='username')
-            await db.update_values(name_table='users', expression='count = count + 1')
+            await db.update_values(name_table='users', expression='count = count + 1', condition='flag == 1')
 
-            if not message_link == "[НЕТ ССЫЛКИ НА СООБЩЕНИЕ]":
+            if message_link != "[НЕТ ССЫЛКИ НА СООБЩЕНИЕ]":
                 for chat in chatic_id:
-                    await bot.send_message(chat_id=chat[0], text=result)
+                    try:
+                        await bot.send_message(chat_id=chat[0], text=result)
+                    except:
+                        pass
             else:
-                await client.forward_messages(entity=bot_username[0][0], from_peer=event.chat_id,
-                                              messages=[message])
+                try:
+                    await client.forward_messages(entity=bot_username[0][0], from_peer=event.chat_id,
+                                                  messages=[message])
+                except:
+                    pass
 
 
 async def on_startup():

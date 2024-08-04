@@ -49,4 +49,6 @@ async def process_back_word_command(callback: CallbackQuery, state: FSMContext) 
 async def process_del_word_command(callback: CallbackQuery) -> None:
     await db.delete_row(name_table='admins',
                         condition=f'user_id == {callback.data}')
+    await db.delete_row(name_table='users',
+                        condition=f'user_id == {callback.data}')
     await callback.answer(text=f'ID: {callback.data} - удален')

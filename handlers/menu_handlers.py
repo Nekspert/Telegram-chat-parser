@@ -49,6 +49,8 @@ async def process_none_cancel_command(message: Message) -> None:
 @router.message(Command(commands=['cancel']), IsAdmin(), ~StateFilter(default_state))
 async def process_cancel_command(message: Message, state: FSMContext) -> None:
     await state.clear()
+    await db.update_values(name_table='users', expression='(flag = 0) AND (count = 0)',
+                           condition=f'user_id == {message.from_user.id}')
     await message.answer(text='Вы вышли из взаимодействия с ботом.\nДля взаимодействия введите команду /start')
 
 
@@ -160,7 +162,7 @@ async def process_target_word_command(callback: CallbackQuery, state: FSMContext
 # template
 @router.callback_query(F.data == 'start_parsing', StateFilter(FSMBotStates.menu))
 async def process_start_parsing_command(callback: CallbackQuery) -> None:
-    await db.update_values(name_table='users', expression='flag = 1')
+    await db.update_values(name_table='users', expression='flag = 1', condition=f'user_id == {callback.from_user.id}')
     chats = (await db.select_values(name_table='chats', columns='chat_id'))
     words = (await db.select_values(name_table='words', columns='target_word'))
     if len(words) == 0 or len(chats) == 0:
@@ -181,8 +183,8 @@ async def process_start_parsing_command(callback: CallbackQuery) -> None:
 
 @router.callback_query(F.data == 'end_parsing', StateFilter(FSMBotStates.menu))
 async def process_end_parsing_command(callback: CallbackQuery) -> None:
-    await db.update_values(name_table='users', expression='flag = 0')
-    await db.update_values(name_table='users', expression='count = 0')
+    await db.update_values(name_table='users', expression='flag = 0', condition=f'user_id == {callback.from_user.id}')
+    await db.update_values(name_table='users', expression='count = 0', condition=f'user_id == {callback.from_user.id}')
     await callback.message.edit_text(text=f'Бот в выключенном состоянии.\n'
                                           f'Бот в реальном времени проверяет чаты и ключевые слова.'
                                           f'\nПерезапускать его после изменения настроек - не нужно.'
